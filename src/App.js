@@ -33,23 +33,26 @@ function App() {
   const [guesses, setGuesses] = useState(3)
   const [score, setScore] = useState(0)
 
-  const pickWordAndCategory = () => {
+  const pickWordAndCategory = useCallback(() => {
     //pegar uma categoria randomica
     const categories = Object.keys(words)
     const category = categories[Math.floor(Math.random() * Object.keys(categories).length)]
 
-    console.log(category)
+
 
     // pick a random word
     const word = words[category][Math.floor(Math.random() * words[category].length)]
 
-    console.log(word)
+
 
     return {word, category}
-  }
+  }, [words])
   
   //inicio do jogo
-  const startGame = () => {
+  const startGame = useCallback(() => {
+    //apagar todoas as letras
+    clearLetterStates();
+
     //escolha as letras e escolhas as palavras
     const { word , category } = pickWordAndCategory();
 
@@ -58,8 +61,7 @@ function App() {
 
     wordLetters = wordLetters.map((l) => l.toLowerCase());
 
-    console.log(word, category)
-    console.log(wordLetters)
+
 
     //setar os estados
     setPickedWord(word)
@@ -67,7 +69,7 @@ function App() {
     setLetters(wordLetters)
 
     setGameStage(stages[1].name)
-  }
+  }, [pickWordAndCategory])
 
   // processo de input da letra
   const verifyLetter = (letter) => {
@@ -101,6 +103,8 @@ function App() {
     setWrongLetters([])
   }
   
+
+  //verifica se as tentativas terminaram
   useEffect(() => {
 
     if(guesses <= 0) {
@@ -110,6 +114,23 @@ function App() {
       setGameStage(stages[2].name)
     }
   }, [guesses])
+
+  //verificar se ele ganhou
+  useEffect(() => {
+
+    const uniqueLetters = [...new Set(letters)]
+
+    if(guessedLetters.length === uniqueLetters.length) {
+      // adicionar pontuação
+      setScore((actualScore) => actualScore += 100)
+
+      //reinicia o game com outra palavra
+      startGame()
+    }
+
+
+
+  }, [guessedLetters, letters, startGame])
 
   //reiniciar o game
   const retry = () => {
@@ -123,7 +144,7 @@ function App() {
     <div className="App">
       {gameStage === 'start' && <StartScreen startGame = {startGame}/>}
       {gameStage === 'game' && <Game verifyLetter = {verifyLetter} pickedWord = {pickedWord} pickedCategory= {pickedCategory} letters = {letters} guessedLetters= {guessedLetters} wrongLetters= {wrongLetters} guesses= {guesses} score= {score}/>}
-      {gameStage === 'end' && <GameOver retry={retry}/>}
+      {gameStage === 'end' && <GameOver retry={retry} score= {score}/>}
     </div>
   );
 }
